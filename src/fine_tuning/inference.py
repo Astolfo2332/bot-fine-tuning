@@ -1,42 +1,33 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import PeftModel
+from unsloth import FastLanguageModel
 
 
 def load_finetuned_model(
-    base_model_name: str,
     adapter_path: str,
-) -> tuple[AutoModelForCausalLM, AutoTokenizer]:
-    """Carga el modelo base + adapter LoRA guardado para inferencia."""
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
+    max_seq_length: int = 2048,
+):
+    """Carga el adapter LoRA guardado para inferencia con Unsloth."""
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=adapter_path,
+        max_seq_length=max_seq_length,
+        load_in_4bit=False,
+        load_in_16bit=True,
     )
-
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_name,
-        quantization_config=bnb_config,
-        device_map="auto",
-    )
-
-    model = PeftModel.from_pretrained(base_model, adapter_path)
-    tokenizer = AutoTokenizer.from_pretrained(adapter_path)
-
+    FastLanguageModel.for_inference(model)
     return model, tokenizer
 
 
 def generate_response(
-    model: AutoModelForCausalLM,
-    tokenizer: AutoTokenizer,
+    model,
+    tokenizer,
     question: str,
     max_new_tokens: int = 256,
 ) -> str:
-    """Genera una respuesta usando el chat template del modelo."""
+    """Genera una respuesta usando el chat template del modelo (non-thinking mode)."""
     messages = [{"role": "user", "content": question}]
 
     input_text = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
+        messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
     )
     inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
 
@@ -46,7 +37,7 @@ def generate_response(
             max_new_tokens=max_new_tokens,
             do_sample=True,
             temperature=0.7,
-            top_p=0.9,
+            top_p=0.8,
         )
 
     response = tokenizer.decode(

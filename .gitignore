@@ -12,3 +12,6 @@ wheels/
 data
 
 .idea
+
+.env
+unsloth_compiled_cache

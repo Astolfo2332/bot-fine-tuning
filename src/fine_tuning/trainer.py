@@ -1,51 +1,60 @@
-from transformers import TrainingArguments
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 
 from src.fine_tuning.config import TrainingHyperparameters, ModelConfig
 
 
-def create_training_args(
+def create_sft_config(
     model_config: ModelConfig,
     params: TrainingHyperparameters,
-) -> TrainingArguments:
-    """Crea los TrainingArguments a partir de la configuración."""
-    return TrainingArguments(
+) -> SFTConfig:
+    """Crea el SFTConfig a partir de la configuración."""
+    return SFTConfig(
         output_dir=model_config.output_dir,
+        max_seq_length=model_config.max_seq_length,
+        dataset_text_field="text",
         num_train_epochs=params.num_train_epochs,
         per_device_train_batch_size=params.per_device_train_batch_size,
         per_device_eval_batch_size=params.per_device_eval_batch_size,
         gradient_accumulation_steps=params.gradient_accumulation_steps,
         learning_rate=params.learning_rate,
         weight_decay=params.weight_decay,
-        warmup_ratio=params.warmup_ratio,
+        warmup_steps=params.warmup_steps,
         lr_scheduler_type=params.lr_scheduler_type,
-        fp16=params.fp16,
+        fp16=False,
+        bf16=params.bf16,
         logging_steps=params.logging_steps,
         eval_strategy=params.eval_strategy,
         save_strategy=params.save_strategy,
+        save_total_limit=params.save_total_limit,
+        load_best_model_at_end=params.load_best_model_at_end,
+        optim=params.optim,
+        seed=params.seed,
+        dataset_num_proc=params.dataset_num_proc,
         report_to="none",
     )
 
 
-def create_trainer(model, tokenizer, train_dataset, eval_dataset, training_args, max_seq_length):
-    """Configura el SFTTrainer de trl para supervised fine-tuning con chat template."""
+def create_trainer(model, tokenizer, train_dataset, eval_dataset, sft_config):
+    """Configura el SFTTrainer de trl para supervised fine-tuning con texto pre-formateado."""
     return SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        args=training_args,
-        max_seq_length=max_seq_length,
+        args=sft_config,
     )
 
 
-def train_and_save(trainer: SFTTrainer, output_dir: str):
+def train_and_save(trainer: SFTTrainer, output_dir: str, resume: bool = False):
     """Ejecuta el entrenamiento y guarda el adapter LoRA + tokenizer."""
     print("Iniciando entrenamiento...")
-    trainer.train()
+
+    if resume:
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
 
     print(f"Guardando modelo en {output_dir}")
     trainer.save_model(output_dir)
-    trainer.tokenizer.save_pretrained(output_dir)
 
     print("Entrenamiento completado.")

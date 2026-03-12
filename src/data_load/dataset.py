@@ -1,6 +1,7 @@
 import json
 
 from datasets import Dataset
+from transformers import AutoTokenizer
 
 
 def load_qa_json(path: str) -> Dataset:
@@ -16,23 +17,28 @@ def load_qa_json(path: str) -> Dataset:
     return Dataset.from_list(filtered)
 
 
-def format_chat_messages(example: dict) -> dict:
-    """Transforma un par Q&A al formato de mensajes chat para SFTTrainer."""
+def format_to_text(example: dict, tokenizer: AutoTokenizer) -> dict:
+    """Aplica el chat template con non-thinking mode y devuelve texto pre-formateado."""
     messages = [
         {"role": "user", "content": example["question"]},
         {"role": "assistant", "content": example["answer"]},
     ]
-    return {"messages": messages}
+    text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=False, enable_thinking=False
+    )
+    return {"text": text}
 
 
-def prepare_dataset(path: str, test_size: float = 0.1) -> dict:
-    """Carga el JSON, formatea a chat y separa en train/test.
+def prepare_dataset(
+    path: str, tokenizer: AutoTokenizer, test_size: float = 0.1
+) -> dict:
+    """Carga el JSON, formatea con chat template (non-thinking) y separa en train/test.
 
     Returns:
         dict con claves "train" y "test", cada una un HF Dataset.
     """
     dataset = load_qa_json(path)
-    dataset = dataset.map(format_chat_messages)
+    dataset = dataset.map(lambda ex: format_to_text(ex, tokenizer))
 
     split = dataset.train_test_split(test_size=test_size, seed=42)
     return {"train": split["train"], "test": split["test"]}
