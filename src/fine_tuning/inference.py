@@ -1,19 +1,25 @@
 import torch
-from unsloth import FastLanguageModel
+from unsloth import FastVisionModel
+from src.prompts.prompts import system_prompt
 
 
 def load_finetuned_model(
+    base_model_name: str,
     adapter_path: str,
     max_seq_length: int = 2048,
 ):
     """Carga el adapter LoRA guardado para inferencia con Unsloth."""
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=adapter_path,
+    model, tokenizer = FastVisionModel.from_pretrained(
+        model_name=base_model_name,
         max_seq_length=max_seq_length,
         load_in_4bit=False,
         load_in_16bit=True,
     )
-    FastLanguageModel.for_inference(model)
+    model.load_adapter(adapter_path)
+
+    model.to("cuda")
+
+    FastVisionModel.for_inference(model)
     return model, tokenizer
 
 
@@ -24,16 +30,33 @@ def generate_response(
     max_new_tokens: int = 256,
 ) -> str:
     """Genera una respuesta usando el chat template del modelo (non-thinking mode)."""
-    messages = [{"role": "user", "content": question}]
+    messages = [
+        {
+            "role": "system",
+            "content": [{"type": "text", "text": system_prompt}],
+        },
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": question}],
+        }
+    ]
 
     input_text = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True, enable_thinking=False
-    )
-    inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
+        messages,
+        tokenize=True,
+        add_generation_prompt=True,
+        # enable_thinking=False,
+        return_tensors="pt"
+    ).to(model.device)
+
+
+    attention_mask = torch.ones_like(input_text).to(model.device)
 
     with torch.no_grad():
         outputs = model.generate(
-            **inputs,
+            input_ids=input_text,
+            attention_mask=attention_mask,
+            pad_token_id=tokenizer.eos_token_id,
             max_new_tokens=max_new_tokens,
             do_sample=True,
             temperature=0.7,
@@ -41,6 +64,6 @@ def generate_response(
         )
 
     response = tokenizer.decode(
-        outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True
+        outputs[0][input_text.shape[1]:], skip_special_tokens=True
     )
     return response

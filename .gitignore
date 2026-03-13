@@ -15,3 +15,12 @@ data
 
 .env
 unsloth_compiled_cache
+
+output
+output_4B
+output_2B
+
+# MLflow
+mlruns/
+.mlflow/
+mlflow.db

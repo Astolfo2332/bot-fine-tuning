@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 @dataclass
 class ModelConfig:
     model_name: str = "unsloth/Qwen3.5-2B"
-    output_dir: str = "./output"
-    max_seq_length: int = 2048
+    output_dir: str = "./output/qwen3.5-2B-multiturn-system-prompt"
+    max_seq_length: int = 250
     load_in_4bit: bool = False
     load_in_16bit: bool = True
     full_finetuning: bool = False
@@ -13,8 +13,8 @@ class ModelConfig:
 
 @dataclass
 class LoraHyperparameters:
-    r: int = 16
-    lora_alpha: int = 16
+    r: int = 64
+    lora_alpha: int = 64
     lora_dropout: float = 0
     target_modules: list[str] = field(
         default_factory=lambda: [
@@ -25,17 +25,21 @@ class LoraHyperparameters:
     bias: str = "none"
     use_gradient_checkpointing: str = "unsloth"
     random_state: int = 3407
+    finetune_language_layers = True
+    finetune_mlp_modules = True
+    finetune_attention_layers = True
+    finetune_vision_layers = False
 
 
 @dataclass
 class TrainingHyperparameters:
     num_train_epochs: int = 3
-    per_device_train_batch_size: int = 6
-    per_device_eval_batch_size: int = 6
+    per_device_train_batch_size: int = 2
+    per_device_eval_batch_size: int = 2
     gradient_accumulation_steps: int = 4
     learning_rate: float = 2e-4
     weight_decay: float = 0.01
-    warmup_steps: int = 10
+    warmup_steps: int = 5
     lr_scheduler_type: str = "cosine"
     bf16: bool = True
     logging_steps: int = 1

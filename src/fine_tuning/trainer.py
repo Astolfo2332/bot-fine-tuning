@@ -2,6 +2,8 @@ from trl import SFTTrainer, SFTConfig
 
 from src.fine_tuning.config import TrainingHyperparameters, ModelConfig
 
+from unsloth.trainer import UnslothVisionDataCollator
+
 
 def create_sft_config(
     model_config: ModelConfig,
@@ -10,8 +12,8 @@ def create_sft_config(
     """Crea el SFTConfig a partir de la configuración."""
     return SFTConfig(
         output_dir=model_config.output_dir,
-        max_seq_length=model_config.max_seq_length,
-        dataset_text_field="text",
+        max_length=model_config.max_seq_length,
+        dataset_text_field="",
         num_train_epochs=params.num_train_epochs,
         per_device_train_batch_size=params.per_device_train_batch_size,
         per_device_eval_batch_size=params.per_device_eval_batch_size,
@@ -30,7 +32,10 @@ def create_sft_config(
         optim=params.optim,
         seed=params.seed,
         dataset_num_proc=params.dataset_num_proc,
-        report_to="none",
+        report_to="mlflow",
+        # Para qwen3.5
+        remove_unused_columns=False,
+        dataset_kwargs={"skip_prepare_dataset": True},
     )
 
 
@@ -42,6 +47,7 @@ def create_trainer(model, tokenizer, train_dataset, eval_dataset, sft_config):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         args=sft_config,
+        data_collator=UnslothVisionDataCollator(model, tokenizer)
     )
 
 

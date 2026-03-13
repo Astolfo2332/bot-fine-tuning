@@ -2,6 +2,7 @@ import json
 
 from datasets import Dataset
 from transformers import AutoTokenizer
+from src.prompts.prompts import system_prompt
 
 
 def load_qa_json(path: str) -> Dataset:
@@ -20,13 +21,38 @@ def load_qa_json(path: str) -> Dataset:
 def format_to_text(example: dict, tokenizer: AutoTokenizer) -> dict:
     """Aplica el chat template con non-thinking mode y devuelve texto pre-formateado."""
     messages = [
-        {"role": "user", "content": example["question"]},
-        {"role": "assistant", "content": example["answer"]},
+        {"role": "system", "content": [{"type": "text", "text": system_prompt}]},
+        {"role": "user", "content": [{"type": "text", "text": example["question"]}]},
+        {"role": "assistant", "content": [{"type": "text", "text": example["answer"]}]},
     ]
-    text = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=False, enable_thinking=False
-    )
-    return {"text": text}
+
+    # text = tokenizer.apply_chat_template(
+    #     messages,
+    #     tokenize=False,
+    #     add_generation_prompt=False,
+    #     # enable_thinking=False
+    # )
+
+    return {"messages": messages}
+
+def make_multi_turn_conversation(dataset: Dataset, batch_size:int=3) -> Dataset:
+    """Se juntan los mensajes para obtener un sistema muilti conversacional en batches de 3 turnos de conversacion"""
+
+    new_data = []
+    # Iteramos sobre el dataset en saltos del tamaño del batch
+    for i in range(0, len(dataset), batch_size):
+        # Extraemos el subconjunto de ejemplos
+        batch = dataset[i: i + batch_size]
+
+        # Si el último batch es más pequeño que el batch_size,
+        combined_messages = []
+        for msg_list in batch["messages"]:
+            combined_messages.extend(msg_list)
+
+        new_data.append({"messages": combined_messages})
+
+    return Dataset.from_list(new_data)
+
 
 
 def prepare_dataset(
@@ -40,5 +66,8 @@ def prepare_dataset(
     dataset = load_qa_json(path)
     dataset = dataset.map(lambda ex: format_to_text(ex, tokenizer))
 
+    dataset = make_multi_turn_conversation(dataset, 5)
+
     split = dataset.train_test_split(test_size=test_size, seed=42)
+
     return {"train": split["train"], "test": split["test"]}
