@@ -1,11 +1,11 @@
-from unsloth import FastVisionModel
+from unsloth import FastTextModel, FastVisionModel
 
 from src.fine_tuning.config import ModelConfig, LoraHyperparameters
 
 
 def load_model_and_tokenizer(config: ModelConfig):
     """Carga el modelo base con Unsloth (bf16 LoRA, sin QLoRA 4-bit)."""
-    model, tokenizer = FastVisionModel.from_pretrained(
+    model, tokenizer = FastTextModel.from_pretrained(
         model_name=config.model_name,
         max_seq_length=config.max_seq_length,
         load_in_4bit=config.load_in_4bit,
@@ -17,7 +17,7 @@ def load_model_and_tokenizer(config: ModelConfig):
 
 def apply_lora(model, params: LoraHyperparameters, max_seq_length: int):
     """Aplica LoRA al modelo usando Unsloth."""
-    model = FastVisionModel.get_peft_model(
+    model = FastTextModel.get_peft_model(
         model,
         r=params.r,
         lora_alpha=params.lora_alpha,

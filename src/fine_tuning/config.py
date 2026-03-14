@@ -1,20 +1,23 @@
 from dataclasses import dataclass, field
 
 
+model_reference ="Ministral-3-8B-Base-2512-bnb-4bit"
+# model_reference ="Llama-3.2-3B"
 @dataclass
 class ModelConfig:
-    model_name: str = "unsloth/Qwen3.5-2B"
-    output_dir: str = "./output/qwen3.5-2B-multiturn-system-prompt"
-    max_seq_length: int = 250
-    load_in_4bit: bool = False
-    load_in_16bit: bool = True
+    model_name: str = f"unsloth/{model_reference}"
+    output_dir: str = f"./output/{model_reference}-multiturn"
+    inference_dir: str = f"./output/{model_reference}-multiturn/checkpoint-4470"
+    max_seq_length: int = 256
+    load_in_4bit: bool = True
+    load_in_16bit: bool = False
     full_finetuning: bool = False
 
 
 @dataclass
 class LoraHyperparameters:
-    r: int = 64
-    lora_alpha: int = 64
+    r: int = 16
+    lora_alpha: int = 16
     lora_dropout: float = 0
     target_modules: list[str] = field(
         default_factory=lambda: [
@@ -39,9 +42,9 @@ class TrainingHyperparameters:
     gradient_accumulation_steps: int = 4
     learning_rate: float = 2e-4
     weight_decay: float = 0.01
-    warmup_steps: int = 5
+    warmup_steps: int = 10
     lr_scheduler_type: str = "cosine"
-    bf16: bool = True
+    bf16: bool = False
     logging_steps: int = 1
     eval_strategy: str = "epoch"
     save_strategy: str = "epoch"

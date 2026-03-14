@@ -13,7 +13,7 @@ def create_sft_config(
     return SFTConfig(
         output_dir=model_config.output_dir,
         max_length=model_config.max_seq_length,
-        dataset_text_field="",
+        dataset_text_field="text",
         num_train_epochs=params.num_train_epochs,
         per_device_train_batch_size=params.per_device_train_batch_size,
         per_device_eval_batch_size=params.per_device_eval_batch_size,
@@ -33,9 +33,10 @@ def create_sft_config(
         seed=params.seed,
         dataset_num_proc=params.dataset_num_proc,
         report_to="mlflow",
+
         # Para qwen3.5
-        remove_unused_columns=False,
-        dataset_kwargs={"skip_prepare_dataset": True},
+        # remove_unused_columns=False,
+        # dataset_kwargs={"skip_prepare_dataset": True},
     )
 
 
@@ -47,7 +48,7 @@ def create_trainer(model, tokenizer, train_dataset, eval_dataset, sft_config):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         args=sft_config,
-        data_collator=UnslothVisionDataCollator(model, tokenizer)
+        # data_collator=UnslothVisionDataCollator(model, tokenizer)
     )
 
 

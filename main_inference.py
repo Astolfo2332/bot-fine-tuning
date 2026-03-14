@@ -10,17 +10,18 @@ from src.fine_tuning.inference import (
 )
 from src.fine_tuning.config import ModelConfig
 
+
 def main():
 
     model_config = ModelConfig()
 
     model, tokenizer = load_finetuned_model(
         model_config.model_name,
-        model_config.output_dir,
+        model_config.inference_dir,
         model_config.max_seq_length
     )
 
-    question = "Tu me quieres?"
+    question = """Que piensas de Sherlyn?"""
 
     response = generate_response(
         model=model,
@@ -28,7 +29,9 @@ def main():
         question=question,
     )
 
+
+    print("Pregunta:", question, "\n\n")
     return response
 
 if __name__ == "__main__":
-    print(main())
+    print("Respuesta:", main())

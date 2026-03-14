@@ -34,7 +34,7 @@ def main():
         print("Checkpoint detectado, reanudando entrenamiento...")
 
     # Inicializar MLflow tracking
-    experiment_name = "qwen3.5-finetuning"
+    experiment_name = "ministral-3-finetuning"
     initialize_mlflow_experiment(
         experiment_name=experiment_name,
         model_config=model_config,
@@ -43,52 +43,46 @@ def main():
         resume=resume,
     )
 
-    try:
-        # 1. Cargar modelo y tokenizer (bf16 con Unsloth)
-        print(f"Cargando modelo {model_config.model_name}...")
-        model, tokenizer = load_model_and_tokenizer(model_config)
+    # 1. Cargar modelo y tokenizer (bf16 con Unsloth)
+    print(f"Cargando modelo {model_config.model_name}...")
+    model, tokenizer = load_model_and_tokenizer(model_config)
 
-        # 2. Cargar y preparar dataset (requiere tokenizer para chat template non-thinking)
-        print("Cargando dataset...")
-        datasets = prepare_dataset("data/qa_data.json", tokenizer)
-        print(f"Train: {len(datasets['train'])} ejemplos | Test: {len(datasets['test'])} ejemplos")
-        print("Ejemplo de entrada formateada:", datasets["train"][0])
+    # 2. Cargar y preparar dataset (requiere tokenizer para chat template non-thinking)
+    print("Cargando dataset...")
+    datasets = prepare_dataset("data/qa_data.json", tokenizer)
+    print(f"Train: {len(datasets['train'])} ejemplos | Test: {len(datasets['test'])} ejemplos")
+    print("Ejemplo de entrada formateada:", datasets["train"][0])
 
-        # Log dataset info a MLflow
-        log_training_summary(
-            train_samples=len(datasets['train']),
-            eval_samples=len(datasets['test']),
-            total_parameters=sum(p.numel() for p in model.parameters()),
-            trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),
-        )
+    # Log dataset info a MLflow
+    log_training_summary(
+        train_samples=len(datasets['train']),
+        eval_samples=len(datasets['test']),
+        total_parameters=sum(p.numel() for p in model.parameters()),
+        trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),
+    )
 
-        log_prompt(system_prompt, "system_prompt")
+    log_prompt(system_prompt, "system_prompt")
 
-        # 3. Aplicar LoRA con Unsloth
-        print("Aplicando LoRA...")
-        model = apply_lora(model, lora_params, model_config.max_seq_length)
+    # 3. Aplicar LoRA con Unsloth
+    print("Aplicando LoRA...")
+    model = apply_lora(model, lora_params, model_config.max_seq_length)
 
-        # 4. Configurar y ejecutar entrenamiento
-        sft_config = create_sft_config(model_config, training_params)
-        trainer = create_trainer(
-            model=model,
-            tokenizer=tokenizer,
-            train_dataset=datasets["train"],
-            eval_dataset=datasets["test"],
-            sft_config=sft_config,
-        )
+    # 4. Configurar y ejecutar entrenamiento
+    sft_config = create_sft_config(model_config, training_params)
+    trainer = create_trainer(
+        model=model,
+        tokenizer=tokenizer,
+        train_dataset=datasets["train"],
+        eval_dataset=datasets["test"],
+        sft_config=sft_config,
+    )
 
-        train_and_save(trainer, model_config.output_dir, resume=resume)
+    train_and_save(trainer, model_config.output_dir, resume=resume)
 
-        # Finalizar MLflow run exitosamente
-        end_mlflow_run(status="FINISHED")
-        print("\nExperimento completado y logueado en MLflow")
+    # Finalizar MLflow run exitosamente
+    end_mlflow_run(status="FINISHED")
+    print("\nExperimento completado y logueado en MLflow")
 
-    except Exception as e:
-        # Finalizar MLflow run con error
-        end_mlflow_run(status="FAILED")
-        print(f"\nError durante el entrenamiento: {str(e)}")
-        raise
 
 
 if __name__ == "__main__":
