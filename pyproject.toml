@@ -1,16 +1,34 @@
 [project]
-name = "miguel-bot-finetuning"
+name = "unsloth-env"
 version = "0.1.0"
-description = "Fine-tuning Qwen3.5 con Unsloth"
+description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 dependencies = [
+    "causal-conv1d>=1.6.1",
+    "flash-linear-attention>=0.4.2",
+    "gguf>=0.18.0",
     "ipykernel>=7.2.0",
-    "pandas>=3.0.1",
-    "unsloth",
-    "unsloth_zoo",
-    "torch",
-    "datasets",
-    "trl",
-    "mlflow,
+    "llama-cpp-python>=0.3.16",
+    "mistral-common>=1.10.0",
+    "mlflow>=3.10.1",
+    "modelscope>=1.35.0",
+    "python-dotenv>=1.2.2",
+    "torch==2.10.0+rocm7.1",
+    "torchvision==0.25.0+rocm7.1",
+    "triton-rocm==3.6.0",
+    "unsloth-zoo",
+    "unsloth[amd]",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-rocm"
+url = "https://download.pytorch.org/whl/rocm7.1"
+explicit = true
+
+[tool.uv.sources]
+torch = {index = "pytorch-rocm"}
+torchvision = {index = "pytorch-rocm"}
+triton-rocm = {index = "pytorch-rocm"}
+unsloth = { git = "https://github.com/unslothai/unsloth" }
+unsloth-zoo = { git = "https://github.com/unslothai/unsloth-zoo.git" }

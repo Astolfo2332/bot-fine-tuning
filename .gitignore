@@ -24,3 +24,5 @@ output_2B
 mlruns/
 .mlflow/
 mlflow.db
+ollama_models
+src/prompts/*

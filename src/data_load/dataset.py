@@ -89,7 +89,7 @@ def map_to_tokenizer_llama(example: dict, tokenizer) -> dict:
 
 
 def prepare_dataset(
-    path: str, tokenizer: AutoTokenizer, test_size: float = 0.1
+    path: str, tokenizer: AutoTokenizer,chat_template_name:str, test_size: float = 0.1
 ) -> dict:
     """Carga el JSON, formatea con chat template (non-thinking) y separa en train/test.
 
@@ -97,17 +97,20 @@ def prepare_dataset(
         dict con claves "train" y "test", cada una un HF Dataset.
     """
     dataset = load_qa_json(path)
-    # dataset = dataset.map(lambda ex: format_to_text_qwen(ex, tokenizer))
+    dataset = dataset.map(lambda ex: format_to_text_qwen(ex, tokenizer))
 
-    dataset = dataset.map(lambda ex: format_to_text_llama(ex, tokenizer))
-    dataset = make_multi_turn_conversation_llama(dataset, 5)
+    # dataset = dataset.map(lambda ex: format_to_text_llama(ex, tokenizer))
+    # dataset = make_multi_turn_conversation_llama(dataset, 5)
+    dataset = make_multi_turn_conversation_qwen(dataset, 5)
 
-    chat_template = get_chat_template(
-        tokenizer,
-        chat_template="chatml"
-    )
+    #De esta forma el tokenizer queda con el chat_template y se puede luego usar en base de la forma de openai
+    if chat_template_name != "native":
+        chat_template = get_chat_template(
+            tokenizer,
+            chat_template=chat_template_name
+        )
 
-    dataset = dataset.map(lambda ex: map_to_tokenizer_llama(ex, chat_template))
+    dataset = dataset.map(lambda ex: map_to_tokenizer_llama(ex, tokenizer))
 
     split = dataset.train_test_split(test_size=test_size, seed=23)
 

@@ -49,7 +49,7 @@ def main():
 
     # 2. Cargar y preparar dataset (requiere tokenizer para chat template non-thinking)
     print("Cargando dataset...")
-    datasets = prepare_dataset("data/qa_data.json", tokenizer)
+    datasets = prepare_dataset("data/qa_data.json", tokenizer, model_config.chat_template)
     print(f"Train: {len(datasets['train'])} ejemplos | Test: {len(datasets['test'])} ejemplos")
     print("Ejemplo de entrada formateada:", datasets["train"][0])
 

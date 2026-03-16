@@ -11,6 +11,7 @@ def load_model_and_tokenizer(config: ModelConfig):
         load_in_4bit=config.load_in_4bit,
         load_in_16bit=config.load_in_16bit,
         full_finetuning=config.full_finetuning,
+        # local_files_only=True
     )
     return model, tokenizer
 

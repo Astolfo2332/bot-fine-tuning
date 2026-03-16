@@ -1,17 +1,18 @@
 from dataclasses import dataclass, field
 
 
-model_reference ="Ministral-3-8B-Base-2512-bnb-4bit"
+model_reference ="Ministral-3-8B-Instruct-2512-bnb-4bit"
 # model_reference ="Llama-3.2-3B"
 @dataclass
 class ModelConfig:
     model_name: str = f"unsloth/{model_reference}"
     output_dir: str = f"./output/{model_reference}-multiturn"
-    inference_dir: str = f"./output/{model_reference}-multiturn/checkpoint-4470"
+    inference_dir: str = f"./output/{model_reference}-multiturn"
     max_seq_length: int = 256
     load_in_4bit: bool = True
     load_in_16bit: bool = False
     full_finetuning: bool = False
+    chat_template: str = "native"
 
 
 @dataclass

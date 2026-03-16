@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -13,16 +14,20 @@ from src.fine_tuning.config import ModelConfig
 
 def main():
 
+    # print(os.getenv("HF_HOME"))
+
     model_config = ModelConfig()
 
+    print("Cargando modelo...")
     model, tokenizer = load_finetuned_model(
         model_config.model_name,
         model_config.inference_dir,
         model_config.max_seq_length
     )
 
-    question = """Que piensas de Sherlyn?"""
+    question = """Que piensas de sherlyn?"""
 
+    print("Ejecutando inferencia...")
     response = generate_response(
         model=model,
         tokenizer=tokenizer,
